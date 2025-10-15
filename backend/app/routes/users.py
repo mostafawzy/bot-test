@@ -18,7 +18,7 @@ def get_db():
 def hash_password(password: str):
     return pwd_context.hash(password)
 
-# Optional: Create a user (hashed)
+
 @router.post("/", response_model=schemas.UserCreate)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     hashed_pw = hash_password(user.password)
