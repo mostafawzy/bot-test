@@ -19,7 +19,7 @@ export default function App() {
     setActiveChatId(null)
   }
 
-  // ✅ Restore user from localStorage on mount
+  // Restore user from localStorage on mount
   useEffect(() => {
     const token = localStorage.getItem("token")
     const username = localStorage.getItem("username")
@@ -47,7 +47,7 @@ useEffect(() => {
         messages: c.messages || []
       }))
 
-      // ✅ prepend new chat at the top
+      //  prepend new chat at the top
       const newChat = {
         id: Date.now().toString(),
         title: 'New chat',
@@ -85,7 +85,7 @@ const handleLoginSuccess = (data) => {
 
   setShowAuthModal(false)
 
-  // ✅ Create a new chat immediately, like pressing "New Chat"
+  // Create a new chat immediately, like pressing "New Chat"
   addNewChat(userData)
 }
 
@@ -116,9 +116,7 @@ const addNewChat = (currentUser = user) => {
     }))
   }
 
- // ✅ Inside App.jsx
-
-
+ // Inside App.jsx
 
   return (
     <div className="h-screen flex bg-[#F8FAF9]">

@@ -5,7 +5,7 @@ from app.database import SessionLocal
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from app.routes.auth import SECRET_KEY, ALGORITHM
-from app.services.hf_client import generate_llama_response  
+from app.services.hf_client import generate_llama_response
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -19,7 +19,6 @@ def get_db():
         db.close()
 
 
-memory = {}
 MAX_HISTORY = 10
 
 
@@ -43,34 +42,41 @@ def chat_message(
     user_msg = request.message
     chat_id = request.chat_id
 
-    chat_history = memory.get(f"{user_id}_{chat_id}", [])
+    # 🔹 Fetch last N messages from database
+    history_records = (
+        db.query(models.ChatHistory)
+        .filter(models.ChatHistory.chat_id == chat_id, models.ChatHistory.user_id == user_id)
+        .order_by(models.ChatHistory.id.desc())
+        .limit(MAX_HISTORY)
+        .all()
+    )
 
+    # Reverse to get chronological order (old → new)
+    history_records = list(reversed(history_records))
+
+    # 🔹 Build message context for the model
     messages = [{"role": "system", "content": "You are a helpful assistant."}]
-    for u, b in chat_history[-MAX_HISTORY:]:
-        messages.append({"role": "user", "content": u})
-        messages.append({"role": "assistant", "content": b})
+    for record in history_records:
+        messages.append({"role": "user", "content": record.message})
+        messages.append({"role": "assistant", "content": record.response})
     messages.append({"role": "user", "content": user_msg})
 
-    #  Call Llama service
+    # 🔹 Call the LLaMA model
     bot_reply = generate_llama_response(messages)
 
-    # Update memory
-    chat_history.append((user_msg, bot_reply))
-    memory[f"{user_id}_{chat_id}"] = chat_history[-MAX_HISTORY:]
-
-    # Save to database
+    # 🔹 Save the new message to DB
     try:
-        new_msg = models.ChatHistory(
+        new_entry = models.ChatHistory(
             chat_id=chat_id,
+            user_id=user_id,
             message=user_msg,
-            response=bot_reply,
-            user_id=user_id
+            response=bot_reply
         )
-        db.add(new_msg)
+        db.add(new_entry)
         db.commit()
     except Exception as e:
         db.rollback()
-        print("DB Error:", e)
+        print(f"DB Error: {e}")
         raise HTTPException(status_code=500, detail="Database error")
 
     return {"response": bot_reply}
