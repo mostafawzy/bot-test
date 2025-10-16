@@ -42,7 +42,7 @@ def chat_message(
     user_msg = request.message
     chat_id = request.chat_id
 
-    # 🔹 Fetch last N messages from database
+    #  Fetch last N messages from database
     history_records = (
         db.query(models.ChatHistory)
         .filter(models.ChatHistory.chat_id == chat_id, models.ChatHistory.user_id == user_id)
@@ -54,17 +54,17 @@ def chat_message(
     # Reverse to get chronological order (old → new)
     history_records = list(reversed(history_records))
 
-    # 🔹 Build message context for the model
+    #  Build message context for the model
     messages = [{"role": "system", "content": "You are a helpful assistant."}]
     for record in history_records:
         messages.append({"role": "user", "content": record.message})
         messages.append({"role": "assistant", "content": record.response})
     messages.append({"role": "user", "content": user_msg})
 
-    # 🔹 Call the LLaMA model
+    #  Call the LLaMA model
     bot_reply = generate_llama_response(messages)
 
-    # 🔹 Save the new message to DB
+    #  Save the new message to DB
     try:
         new_entry = models.ChatHistory(
             chat_id=chat_id,
