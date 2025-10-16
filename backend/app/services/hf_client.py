@@ -13,7 +13,7 @@ MODEL_NAME = os.getenv("HF_MODEL_NAME")
 client = InferenceClient(api_key=API_TOKEN)
 
 
-def generate_llama_response(messages, max_tokens: int = 150) -> str:
+def generate_llama_response(messages, max_tokens=None) -> str:
     """
     Sends chat messages to the Hugging Face Inference API (Meta LLaMA model)
     and streams the response.
